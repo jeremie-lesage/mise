@@ -190,7 +190,11 @@ impl AquaRegistry {
             if let Some(registry) = AQUA_STANDARD_REGISTRY_FILES.get(id) {
                 trace!("reading baked-in aqua-registry for {id}");
                 serde_yaml::from_str(registry)?
-            } else if !path.exists() || file::modified_duration(&path)? > DAILY {
+            } else if  let Some(aqua_registry_url) = &SETTINGS.aqua.registry_url {
+                trace!("downloading aqua-registry for {id} to {path:?}");
+                http::HTTP_FETCH.download_file(aqua_registry_url, &path, None)?;
+                serde_yaml::from_reader(file::open(&path)?)?
+            }  else if !path.exists() || file::modified_duration(&path)? > DAILY {
                 trace!("downloading aqua-registry for {id} to {path:?}");
                 let url: Url =
                     format!("https://mise-versions.jdx.dev/aqua-registry/{path_id}/registry.yaml")
